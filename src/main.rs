@@ -1,8 +1,7 @@
 use winit::{
-    application::ApplicationHandler,
     dpi::PhysicalSize,
     event::{Event, WindowEvent},
-    event_loop::EventLoop,
+    event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowAttributes},
 };
 
@@ -78,15 +77,56 @@ impl<'a> Graphics<'a> {
         }
     }
 
+    fn reconfigure_surface(&mut self) {
+        self.surface.configure(&self.device, &self.config);
+    }
+
     fn handle_resize(&mut self, size: PhysicalSize<u32>) {
         self.config.width = size.width;
         self.config.height = size.height;
-        self.surface.configure(&self.device, &self.config);
+        self.reconfigure_surface();
+    }
+
+    fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+        let frame = self.surface.get_current_texture()?;
+        let view = frame
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+        {
+            let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: None,
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: 0.1,
+                            g: 0.2,
+                            b: 0.3,
+                            a: 1.0,
+                        }),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                ..Default::default()
+            });
+        }
+
+        self.queue.submit(std::iter::once(encoder.finish()));
+        frame.present();
+
+        Ok(())
     }
 }
 
 async fn run() {
     let event_loop = EventLoop::new().unwrap();
+    event_loop.set_control_flow(ControlFlow::Poll);
 
     let window = event_loop
         .create_window(WindowAttributes::default())
@@ -94,6 +134,7 @@ async fn run() {
 
     let mut graphics = Graphics::init(&window).await;
 
+    let window_ref = &window;
     event_loop
         .run(move |event, elwt| {
             if let Event::WindowEvent {
@@ -107,6 +148,17 @@ async fn run() {
                     }
                     WindowEvent::CloseRequested => {
                         elwt.exit();
+                    }
+                    WindowEvent::RedrawRequested => {
+                        match graphics.render() {
+                            Ok(_) => {}
+                            Err(wgpu::SurfaceError::Lost) => {
+                                graphics.reconfigure_surface();
+                            }
+                            Err(wgpu::SurfaceError::OutOfMemory) => elwt.exit(),
+                            Err(e) => eprintln!("{:?}", e),
+                        }
+                        window_ref.request_redraw();
                     }
                     _ => {}
                 }
