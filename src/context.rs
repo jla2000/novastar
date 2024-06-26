@@ -1,6 +1,6 @@
 use winit::{dpi::PhysicalSize, window::Window};
 
-pub struct Graphics<'a> {
+pub struct Context<'a> {
     instance: wgpu::Instance,
     surface: wgpu::Surface<'a>,
     adapter: wgpu::Adapter,
@@ -9,8 +9,8 @@ pub struct Graphics<'a> {
     config: wgpu::SurfaceConfiguration,
 }
 
-impl<'a> Graphics<'a> {
-    pub async fn init(window: &'a Window) -> Graphics<'a> {
+impl<'a> Context<'a> {
+    pub async fn new(window: &'a Window) -> Context<'a> {
         let window_size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {

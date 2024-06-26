@@ -1,6 +1,6 @@
-mod graphics;
+mod context;
 
-use crate::graphics::Graphics;
+use crate::context::Context;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -15,7 +15,7 @@ async fn run() {
         .create_window(WindowAttributes::default())
         .unwrap();
 
-    let mut graphics = Graphics::init(&window).await;
+    let mut graphics = Context::new(&window).await;
 
     let window_ref = &window;
     event_loop
