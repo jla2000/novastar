@@ -1,5 +1,7 @@
 use winit::{dpi::PhysicalSize, window::Window};
 
+use crate::pipeline::RenderPipeline;
+
 pub struct Context<'a> {
     instance: wgpu::Instance,
     surface: wgpu::Surface<'a>,
@@ -7,6 +9,7 @@ pub struct Context<'a> {
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
+    render_pipeline: RenderPipeline,
 }
 
 impl<'a> Context<'a> {
@@ -62,6 +65,8 @@ impl<'a> Context<'a> {
 
         surface.configure(&device, &config);
 
+        let render_pipeline = RenderPipeline::new(&device, config.format);
+
         Self {
             instance,
             surface,
@@ -69,6 +74,7 @@ impl<'a> Context<'a> {
             device,
             queue,
             config,
+            render_pipeline,
         }
     }
 
@@ -93,7 +99,7 @@ impl<'a> Context<'a> {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
         {
-            let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
@@ -110,6 +116,8 @@ impl<'a> Context<'a> {
                 })],
                 ..Default::default()
             });
+
+            self.render_pipeline.render(&mut render_pass);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

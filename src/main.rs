@@ -1,4 +1,5 @@
 mod context;
+mod pipeline;
 
 use crate::context::Context;
 use winit::{
