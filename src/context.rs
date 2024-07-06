@@ -1,6 +1,6 @@
 use winit::{dpi::PhysicalSize, window::Window};
 
-use crate::pipeline::RenderPipeline;
+use crate::render_pipeline::RenderPipeline;
 
 pub struct Context<'a> {
     instance: wgpu::Instance,

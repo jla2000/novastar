@@ -1,5 +1,6 @@
+mod compute_pipeline;
 mod context;
-mod pipeline;
+mod render_pipeline;
 
 use crate::context::Context;
 use winit::{
@@ -8,6 +9,10 @@ use winit::{
     window::WindowAttributes,
 };
 
+// The lazy initialization of winit's ApplicationHandler is difficult to integrate with the
+// lifetime of the Window object. Thus the old deprecated API is used in order to avoid this
+// issue.
+#[allow(deprecated)]
 async fn run() {
     let event_loop = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Poll);
