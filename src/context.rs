@@ -10,8 +10,8 @@ pub struct Context<'a> {
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
-    render_pipeline: RenderPipeline,
-    compute_pipeline: ComputePipeline,
+    render_pipeline: Box<RenderPipeline>,
+    compute_pipeline: Box<ComputePipeline>,
 }
 
 impl<'a> Context<'a> {
@@ -67,16 +67,16 @@ impl<'a> Context<'a> {
 
         surface.configure(&device, &config);
 
-        let render_pipeline = RenderPipeline::new(&device, config.format);
-        let compute_pipeline = ComputePipeline::new(
+        let render_pipeline = Box::new(RenderPipeline::new(&device, config.format));
+        let compute_pipeline = Box::new(ComputePipeline::new(
             &device,
             config.format,
             wgpu::Extent3d {
-                width: window_size.width,
-                height: window_size.height,
+                width: config.width,
+                height: config.height,
                 depth_or_array_layers: 1,
             },
-        );
+        ));
 
         Self {
             instance,
@@ -92,6 +92,18 @@ impl<'a> Context<'a> {
 
     pub fn reconfigure_surface(&mut self) {
         self.surface.configure(&self.device, &self.config);
+
+        // TODO: This could be further optimized
+        self.render_pipeline = Box::new(RenderPipeline::new(&self.device, self.config.format));
+        self.compute_pipeline = Box::new(ComputePipeline::new(
+            &self.device,
+            self.config.format,
+            wgpu::Extent3d {
+                width: self.config.width,
+                height: self.config.height,
+                depth_or_array_layers: 1,
+            },
+        ));
     }
 
     pub fn handle_resize(&mut self, size: PhysicalSize<u32>) {
