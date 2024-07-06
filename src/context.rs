@@ -68,7 +68,15 @@ impl<'a> Context<'a> {
         surface.configure(&device, &config);
 
         let render_pipeline = RenderPipeline::new(&device, config.format);
-        let compute_pipeline = ComputePipeline::new(&device, config.format);
+        let compute_pipeline = ComputePipeline::new(
+            &device,
+            config.format,
+            wgpu::Extent3d {
+                width: window_size.width,
+                height: window_size.height,
+                depth_or_array_layers: 1,
+            },
+        );
 
         Self {
             instance,
