@@ -6,7 +6,7 @@ pub struct ComputePipeline {
 
 impl ComputePipeline {
     pub fn new(device: &wgpu::Device, output_format: wgpu::TextureFormat) -> Self {
-        let shader = device.create_shader_module(wgpu::include_wgsl!("triangle.wgsl"));
+        let shader = device.create_shader_module(wgpu::include_wgsl!("compute.wgsl"));
 
         let compute_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
