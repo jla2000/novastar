@@ -1,12 +1,10 @@
 use std::sync::Arc;
-use std::time::{Duration, Instant};
 
-use wgpu_text::glyph_brush::ab_glyph::FontRef;
-use wgpu_text::glyph_brush::{SectionBuilder, Text};
-use wgpu_text::TextBrush;
-use winit::{dpi::PhysicalSize, window::Window};
+use winit::dpi::PhysicalSize;
+use winit::window::Window;
 
 use crate::compute_pipeline::ComputePipeline;
+use crate::debug::Debug;
 use crate::render_pipeline::RenderPipeline;
 
 pub struct Context {
@@ -16,13 +14,7 @@ pub struct Context {
     config: wgpu::SurfaceConfiguration,
     render_pipeline: Box<RenderPipeline>,
     compute_pipeline: Box<ComputePipeline>,
-    brush: TextBrush<FontRef<'static>>,
-
-    // Fps calculation
-    fps: f32,
-    last_update: Instant,
-    frame_count: usize,
-
+    debug: Box<Debug>,
     window: Arc<Window>,
 }
 
@@ -94,12 +86,7 @@ impl Context {
             config.format,
             compute_pipeline.get_texture_view(),
         ));
-
-        let brush = wgpu_text::BrushBuilder::using_font_bytes(include_bytes!(
-            "fonts/RobotoMonoNerdFont-Medium.ttf"
-        ))
-        .unwrap()
-        .build(&device, config.width, config.height, config.format);
+        let debug = Box::new(Debug::new(&device, &config));
 
         Self {
             surface,
@@ -108,10 +95,7 @@ impl Context {
             config,
             render_pipeline,
             compute_pipeline,
-            brush,
-            fps: 0.0,
-            last_update: Instant::now(),
-            frame_count: 0,
+            debug,
             window,
         }
     }
@@ -133,30 +117,17 @@ impl Context {
             self.config.format,
             self.compute_pipeline.get_texture_view(),
         ));
+
+        self.debug = Box::new(Debug::new(&self.device, &self.config));
     }
 
     pub fn handle_resize(&mut self, size: PhysicalSize<u32>) {
         self.config.width = size.width;
         self.config.height = size.height;
-        self.brush.resize_view(
-            self.config.width as f32,
-            self.config.height as f32,
-            &self.queue,
-        );
         self.reconfigure_surface();
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        let now = Instant::now();
-        self.frame_count += 1;
-        let duration = now - self.last_update;
-
-        if duration >= Duration::from_millis(500) {
-            self.fps = self.frame_count as f32 / duration.as_secs_f32();
-            self.last_update = now;
-            self.frame_count = 0;
-        }
-
         let frame = self.surface.get_current_texture()?;
         let view = frame
             .texture
@@ -190,21 +161,8 @@ impl Context {
             });
 
             self.render_pipeline.render(&mut render_pass);
-
-            let fps_string = format!("FPS: {}", self.fps as i32);
-            let section = SectionBuilder::default()
-                .with_screen_position((10.0, 10.0))
-                .add_text(
-                    Text::new(&fps_string)
-                        .with_scale(26.0)
-                        .with_color([1.0, 1.0, 1.0, 1.0]),
-                );
-
-            self.brush
-                .queue(&self.device, &self.queue, [&section])
-                .unwrap();
-
-            self.brush.draw(&mut render_pass);
+            self.debug
+                .render(&self.device, &self.queue, &mut render_pass);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

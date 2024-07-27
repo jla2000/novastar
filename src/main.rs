@@ -1,5 +1,6 @@
 mod compute_pipeline;
 mod context;
+mod debug;
 mod render_pipeline;
 
 use std::sync::Arc;
