@@ -8,9 +8,9 @@ use crate::context::Context;
 use winit::{
     application::ApplicationHandler,
     dpi::LogicalSize,
-    event::{Event, WindowEvent},
+    event::WindowEvent,
     event_loop::{ControlFlow, EventLoop},
-    window::{Window, WindowAttributes},
+    window::Window,
 };
 
 struct App {
@@ -34,7 +34,7 @@ impl ApplicationHandler for App {
     fn window_event(
         &mut self,
         event_loop: &winit::event_loop::ActiveEventLoop,
-        window_id: winit::window::WindowId,
+        _window_id: winit::window::WindowId,
         event: WindowEvent,
     ) {
         if let Some(context) = &mut self.context {
@@ -67,5 +67,5 @@ fn main() {
 
     let event_loop = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Poll);
-    event_loop.run_app(&mut App { context: None });
+    _ = event_loop.run_app(&mut App { context: None });
 }
