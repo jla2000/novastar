@@ -71,7 +71,6 @@ impl<'a> Context<'a> {
         let render_pipeline = Box::new(RenderPipeline::new(&device, config.format));
         let compute_pipeline = Box::new(ComputePipeline::new(
             &device,
-            config.format,
             wgpu::Extent3d {
                 width: config.width,
                 height: config.height,
@@ -98,7 +97,6 @@ impl<'a> Context<'a> {
         self.render_pipeline = Box::new(RenderPipeline::new(&self.device, self.config.format));
         self.compute_pipeline = Box::new(ComputePipeline::new(
             &self.device,
-            self.config.format,
             wgpu::Extent3d {
                 width: self.config.width,
                 height: self.config.height,
@@ -123,7 +121,14 @@ impl<'a> Context<'a> {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        self.compute_pipeline.compute();
+        {
+            let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: None,
+                timestamp_writes: None,
+            });
+
+            self.compute_pipeline.compute(&mut compute_pass);
+        }
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
