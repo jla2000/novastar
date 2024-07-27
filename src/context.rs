@@ -1,21 +1,22 @@
+use std::sync::Arc;
+
 use winit::{dpi::PhysicalSize, window::Window};
 
 use crate::compute_pipeline::ComputePipeline;
 use crate::render_pipeline::RenderPipeline;
 
-pub struct Context<'a> {
-    instance: wgpu::Instance,
-    surface: wgpu::Surface<'a>,
-    adapter: wgpu::Adapter,
+pub struct Context {
+    surface: wgpu::Surface<'static>,
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     render_pipeline: Box<RenderPipeline>,
     compute_pipeline: Box<ComputePipeline>,
+    window: Arc<Window>,
 }
 
-impl<'a> Context<'a> {
-    pub async fn new(window: &'a Window) -> Context<'a> {
+impl Context {
+    pub async fn new(window: Arc<Window>) -> Context {
         let window_size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
@@ -23,7 +24,7 @@ impl<'a> Context<'a> {
             ..Default::default()
         });
 
-        let surface = instance.create_surface(window).unwrap();
+        let surface = instance.create_surface(window.clone()).unwrap();
 
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -40,6 +41,7 @@ impl<'a> Context<'a> {
                     required_features: wgpu::Features::empty(),
                     required_limits: wgpu::Limits::default(),
                     label: None,
+                    memory_hints: wgpu::MemoryHints::default(),
                 },
                 None,
             )
@@ -83,14 +85,13 @@ impl<'a> Context<'a> {
         ));
 
         Self {
-            instance,
             surface,
-            adapter,
             device,
             queue,
             config,
             render_pipeline,
             compute_pipeline,
+            window,
         }
     }
 
@@ -159,5 +160,9 @@ impl<'a> Context<'a> {
         frame.present();
 
         Ok(())
+    }
+
+    pub fn window(&mut self) -> &mut Arc<Window> {
+        &mut self.window
     }
 }

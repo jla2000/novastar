@@ -17,6 +17,6 @@ fn vs_main(
 
 @fragment
 fn fs_main(@builtin(position) frag_pos: vec4<f32>) -> @location(0) vec4<f32> {
-    let tex_coords: vec2<f32> = frag_pos.xy / vec2<f32>(textureDimensions(compute_texture).xy);
+    let tex_coords = frag_pos.xy / vec2<f32>(textureDimensions(compute_texture).xy);
     return textureSample(compute_texture, compute_sampler, tex_coords);
 }

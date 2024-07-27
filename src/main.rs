@@ -2,62 +2,70 @@ mod compute_pipeline;
 mod context;
 mod render_pipeline;
 
+use std::sync::Arc;
+
 use crate::context::Context;
 use winit::{
+    application::ApplicationHandler,
+    dpi::LogicalSize,
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
-    window::WindowAttributes,
+    window::{Window, WindowAttributes},
 };
 
-// The lazy initialization of winit's ApplicationHandler is difficult to integrate with the
-// lifetime of the Window object. Thus the old deprecated API is used in order to avoid this
-// issue.
-#[allow(deprecated)]
-async fn run() {
+struct App {
+    context: Option<Context>,
+}
+
+impl ApplicationHandler for App {
+    fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+        if self.context.is_some() {
+            return;
+        }
+
+        let window_attrs = Window::default_attributes()
+            .with_inner_size(LogicalSize::new(800.0, 600.0))
+            .with_title("novastar");
+
+        let window = Arc::new(event_loop.create_window(window_attrs).unwrap());
+        self.context = Some(pollster::block_on(Context::new(window.clone())));
+    }
+
+    fn window_event(
+        &mut self,
+        event_loop: &winit::event_loop::ActiveEventLoop,
+        window_id: winit::window::WindowId,
+        event: WindowEvent,
+    ) {
+        if let Some(context) = &mut self.context {
+            match event {
+                WindowEvent::Resized(new_size) => {
+                    context.handle_resize(new_size);
+                }
+                WindowEvent::CloseRequested => {
+                    event_loop.exit();
+                }
+                WindowEvent::RedrawRequested => {
+                    match context.render() {
+                        Ok(_) => {}
+                        Err(wgpu::SurfaceError::Lost) => {
+                            context.reconfigure_surface();
+                        }
+                        Err(wgpu::SurfaceError::OutOfMemory) => event_loop.exit(),
+                        Err(e) => eprintln!("{:?}", e),
+                    }
+                    context.window().request_redraw();
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+fn main() {
     env_logger::init();
 
     let event_loop = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Poll);
-
-    let window = event_loop
-        .create_window(WindowAttributes::default())
-        .unwrap();
-
-    let mut graphics = Context::new(&window).await;
-
-    let window_ref = &window;
-    event_loop
-        .run(move |event, elwt| {
-            if let Event::WindowEvent {
-                window_id: _,
-                event,
-            } = event
-            {
-                match event {
-                    WindowEvent::Resized(new_size) => {
-                        graphics.handle_resize(new_size);
-                    }
-                    WindowEvent::CloseRequested => {
-                        elwt.exit();
-                    }
-                    WindowEvent::RedrawRequested => {
-                        match graphics.render() {
-                            Ok(_) => {}
-                            Err(wgpu::SurfaceError::Lost) => {
-                                graphics.reconfigure_surface();
-                            }
-                            Err(wgpu::SurfaceError::OutOfMemory) => elwt.exit(),
-                            Err(e) => eprintln!("{:?}", e),
-                        }
-                        window_ref.request_redraw();
-                    }
-                    _ => {}
-                }
-            }
-        })
-        .unwrap();
-}
-
-fn main() {
-    pollster::block_on(run());
+    event_loop.run_app(&mut App { context: None });
 }

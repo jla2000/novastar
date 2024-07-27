@@ -60,6 +60,7 @@ impl ComputePipeline {
             module: &shader,
             entry_point: "comp_main",
             compilation_options: PipelineCompilationOptions::default(),
+            cache: None,
         });
 
         Self {
