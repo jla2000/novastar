@@ -1,5 +1,8 @@
 use std::sync::Arc;
 
+use wgpu_text::glyph_brush::ab_glyph::FontRef;
+use wgpu_text::glyph_brush::{SectionBuilder, Text};
+use wgpu_text::TextBrush;
 use winit::{dpi::PhysicalSize, window::Window};
 
 use crate::compute_pipeline::ComputePipeline;
@@ -12,6 +15,7 @@ pub struct Context {
     config: wgpu::SurfaceConfiguration,
     render_pipeline: Box<RenderPipeline>,
     compute_pipeline: Box<ComputePipeline>,
+    brush: TextBrush<FontRef<'static>>,
     window: Arc<Window>,
 }
 
@@ -84,6 +88,12 @@ impl Context {
             compute_pipeline.get_texture_view(),
         ));
 
+        let brush = wgpu_text::BrushBuilder::using_font_bytes(include_bytes!(
+            "fonts/RobotoMonoNerdFont-Medium.ttf"
+        ))
+        .unwrap()
+        .build(&device, config.width, config.height, config.format);
+
         Self {
             surface,
             device,
@@ -91,6 +101,7 @@ impl Context {
             config,
             render_pipeline,
             compute_pipeline,
+            brush,
             window,
         }
     }
@@ -117,6 +128,11 @@ impl Context {
     pub fn handle_resize(&mut self, size: PhysicalSize<u32>) {
         self.config.width = size.width;
         self.config.height = size.height;
+        self.brush.resize_view(
+            self.config.width as f32,
+            self.config.height as f32,
+            &self.queue,
+        );
         self.reconfigure_surface();
     }
 
@@ -154,6 +170,20 @@ impl Context {
             });
 
             self.render_pipeline.render(&mut render_pass);
+
+            let section = SectionBuilder::default()
+                .with_screen_position((10.0, 10.0))
+                .add_text(
+                    Text::new("hello world")
+                        .with_scale(26.0)
+                        .with_color([1.0, 1.0, 1.0, 1.0]),
+                );
+
+            self.brush
+                .queue(&self.device, &self.queue, [&section])
+                .unwrap();
+
+            self.brush.draw(&mut render_pass);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

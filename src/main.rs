@@ -7,7 +7,6 @@ use std::sync::Arc;
 use crate::context::Context;
 use winit::{
     application::ApplicationHandler,
-    dpi::LogicalSize,
     event::WindowEvent,
     event_loop::{ControlFlow, EventLoop},
     window::Window,
@@ -23,9 +22,7 @@ impl ApplicationHandler for App {
             return;
         }
 
-        let window_attrs = Window::default_attributes()
-            .with_inner_size(LogicalSize::new(800.0, 600.0))
-            .with_title("novastar");
+        let window_attrs = Window::default_attributes().with_title("novastar");
 
         let window = Arc::new(event_loop.create_window(window_attrs).unwrap());
         self.context = Some(pollster::block_on(Context::new(window)));
