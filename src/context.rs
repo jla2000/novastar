@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use wgpu_text::glyph_brush::ab_glyph::FontRef;
 use wgpu_text::glyph_brush::{SectionBuilder, Text};
@@ -16,6 +17,12 @@ pub struct Context {
     render_pipeline: Box<RenderPipeline>,
     compute_pipeline: Box<ComputePipeline>,
     brush: TextBrush<FontRef<'static>>,
+
+    // Fps calculation
+    fps: f32,
+    last_update: Instant,
+    frame_count: usize,
+
     window: Arc<Window>,
 }
 
@@ -102,6 +109,9 @@ impl Context {
             render_pipeline,
             compute_pipeline,
             brush,
+            fps: 0.0,
+            last_update: Instant::now(),
+            frame_count: 0,
             window,
         }
     }
@@ -137,6 +147,16 @@ impl Context {
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+        let now = Instant::now();
+        self.frame_count += 1;
+        let duration = now - self.last_update;
+
+        if duration >= Duration::from_millis(500) {
+            self.fps = self.frame_count as f32 / duration.as_secs_f32();
+            self.last_update = now;
+            self.frame_count = 0;
+        }
+
         let frame = self.surface.get_current_texture()?;
         let view = frame
             .texture
@@ -171,10 +191,11 @@ impl Context {
 
             self.render_pipeline.render(&mut render_pass);
 
+            let fps_string = format!("FPS: {}", self.fps as i32);
             let section = SectionBuilder::default()
                 .with_screen_position((10.0, 10.0))
                 .add_text(
-                    Text::new("hello world")
+                    Text::new(&fps_string)
                         .with_scale(26.0)
                         .with_color([1.0, 1.0, 1.0, 1.0]),
                 );
