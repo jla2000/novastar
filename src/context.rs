@@ -14,7 +14,7 @@ pub struct Context {
     config: wgpu::SurfaceConfiguration,
     render_pipeline: Box<RenderPipeline>,
     compute_pipeline: Box<ComputePipeline>,
-    debug: Box<Debug>,
+    debug: Debug,
     window: Arc<Window>,
 }
 
@@ -86,7 +86,7 @@ impl Context {
             config.format,
             compute_pipeline.get_texture_view(),
         ));
-        let debug = Box::new(Debug::new(&device, &config));
+        let debug = Debug::new(&device, &config, adapter.get_info());
 
         Self {
             surface,
@@ -118,7 +118,11 @@ impl Context {
             self.compute_pipeline.get_texture_view(),
         ));
 
-        self.debug = Box::new(Debug::new(&self.device, &self.config));
+        self.debug.handle_resize(
+            self.config.width as f32,
+            self.config.height as f32,
+            &self.queue,
+        );
     }
 
     pub fn handle_resize(&mut self, size: PhysicalSize<u32>) {
