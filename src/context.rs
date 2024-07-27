@@ -68,7 +68,6 @@ impl<'a> Context<'a> {
         surface.configure(&device, &config);
 
         // TODO: see `[reconfigure_surface]`
-        let render_pipeline = Box::new(RenderPipeline::new(&device, config.format));
         let compute_pipeline = Box::new(ComputePipeline::new(
             &device,
             wgpu::Extent3d {
@@ -76,6 +75,11 @@ impl<'a> Context<'a> {
                 height: config.height,
                 depth_or_array_layers: 1,
             },
+        ));
+        let render_pipeline = Box::new(RenderPipeline::new(
+            &device,
+            config.format,
+            compute_pipeline.get_texture_view(),
         ));
 
         Self {
@@ -94,7 +98,6 @@ impl<'a> Context<'a> {
         self.surface.configure(&self.device, &self.config);
 
         // TODO: This could be further optimized
-        self.render_pipeline = Box::new(RenderPipeline::new(&self.device, self.config.format));
         self.compute_pipeline = Box::new(ComputePipeline::new(
             &self.device,
             wgpu::Extent3d {
@@ -102,6 +105,11 @@ impl<'a> Context<'a> {
                 height: self.config.height,
                 depth_or_array_layers: 1,
             },
+        ));
+        self.render_pipeline = Box::new(RenderPipeline::new(
+            &self.device,
+            self.config.format,
+            self.compute_pipeline.get_texture_view(),
         ));
     }
 
@@ -137,12 +145,7 @@ impl<'a> Context<'a> {
                     view: &view,
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
-                            a: 1.0,
-                        }),
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                         store: wgpu::StoreOp::Store,
                     },
                 })],
