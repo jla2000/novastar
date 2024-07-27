@@ -3,6 +3,7 @@ use wgpu::PipelineCompilationOptions;
 pub struct ComputePipeline {
     pipeline: wgpu::ComputePipeline,
     texture: wgpu::Texture,
+    texture_view: wgpu::TextureView,
 }
 
 impl ComputePipeline {
@@ -39,9 +40,12 @@ impl ComputePipeline {
             view_formats: &[],
         });
 
+        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
         Self {
             pipeline: compute_pipeline,
             texture,
+            texture_view,
         }
     }
 

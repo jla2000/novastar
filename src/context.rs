@@ -67,6 +67,7 @@ impl<'a> Context<'a> {
 
         surface.configure(&device, &config);
 
+        // TODO: see `[reconfigure_surface]`
         let render_pipeline = Box::new(RenderPipeline::new(&device, config.format));
         let compute_pipeline = Box::new(ComputePipeline::new(
             &device,
