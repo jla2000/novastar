@@ -9,7 +9,7 @@ pub struct ComputePipeline {
 
 impl ComputePipeline {
     pub fn new(device: &wgpu::Device, output_size: wgpu::Extent3d) -> Self {
-        let shader = device.create_shader_module(wgpu::include_wgsl!("compute.wgsl"));
+        let shader = device.create_shader_module(wgpu::include_wgsl!("shaders/compute.wgsl"));
 
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             format: wgpu::TextureFormat::Rgba8Unorm,
@@ -18,9 +18,7 @@ impl ComputePipeline {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                | wgpu::TextureUsages::STORAGE_BINDING
-                | wgpu::TextureUsages::TEXTURE_BINDING,
+            usage: wgpu::TextureUsages::STORAGE_BINDING | wgpu::TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         });
 
@@ -75,7 +73,7 @@ impl ComputePipeline {
     pub fn compute<'a>(&'a self, compute_pass: &mut wgpu::ComputePass<'a>) {
         compute_pass.set_pipeline(&self.pipeline);
         compute_pass.set_bind_group(0, &self.bind_group, &[]);
-        compute_pass.dispatch_workgroups(self.texture.width() / 16, self.texture.height() / 16, 1);
+        compute_pass.dispatch_workgroups(self.texture.width() / 10, self.texture.height() / 10, 1);
     }
 
     pub fn get_texture_view(&self) -> &wgpu::TextureView {

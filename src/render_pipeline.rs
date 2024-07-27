@@ -9,7 +9,7 @@ impl RenderPipeline {
         output_format: wgpu::TextureFormat,
         texture_view: &wgpu::TextureView,
     ) -> Self {
-        let shader = device.create_shader_module(wgpu::include_wgsl!("render.wgsl"));
+        let shader = device.create_shader_module(wgpu::include_wgsl!("shaders/render.wgsl"));
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: None,
@@ -76,22 +76,11 @@ impl RenderPipeline {
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),
-            //primitive: wgpu::PrimitiveState {
-            //    topology: wgpu::PrimitiveTopology::TriangleList,
-            //    strip_index_format: None,
-            //    front_face: wgpu::FrontFace::Ccw,
-            //    cull_mode: Some(wgpu::Face::Back),
-            //    polygon_mode: wgpu::PolygonMode::Fill,
-            //    unclipped_depth: false,
-            //    conservative: false,
-            //},
-            primitive: wgpu::PrimitiveState::default(),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleStrip,
+                ..Default::default()
+            },
             depth_stencil: None,
-            //multisample: wgpu::MultisampleState {
-            //    count: 1,
-            //    mask: !0,
-            //    alpha_to_coverage_enabled: false,
-            //},
             multisample: wgpu::MultisampleState::default(),
             multiview: None,
         });
@@ -105,6 +94,6 @@ impl RenderPipeline {
     pub fn render<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
         render_pass.set_pipeline(&self.pipeline);
         render_pass.set_bind_group(0, &self.bind_group, &[]);
-        render_pass.draw(0..3, 0..1);
+        render_pass.draw(0..4, 0..1);
     }
 }
