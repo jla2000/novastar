@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 use wgpu::SurfaceConfiguration;
 use wgpu_text::{
     glyph_brush::{ab_glyph::FontRef, SectionBuilder, Text},
-    TextBrush,
+    BrushBuilder, TextBrush,
 };
 
 pub struct Debug {
@@ -11,7 +11,7 @@ pub struct Debug {
     fps: f32,
     last_render: Instant,
     frame_count: usize,
-    adapter_info: wgpu::AdapterInfo,
+    backend: wgpu::Backend,
 }
 
 impl Debug {
@@ -20,18 +20,17 @@ impl Debug {
         config: &SurfaceConfiguration,
         adapter_info: wgpu::AdapterInfo,
     ) -> Self {
-        let brush = wgpu_text::BrushBuilder::using_font_bytes(include_bytes!(
-            "fonts/RobotoMonoNerdFont-Medium.ttf"
-        ))
-        .unwrap()
-        .build(device, config.width, config.height, config.format);
+        let brush =
+            BrushBuilder::using_font_bytes(include_bytes!("fonts/RobotoMonoNerdFont-Bold.ttf"))
+                .unwrap()
+                .build(device, config.width, config.height, config.format);
 
         Self {
             brush,
             fps: 0.0,
             last_render: Instant::now(),
             frame_count: 0,
-            adapter_info,
+            backend: adapter_info.backend,
         }
     }
 
@@ -56,16 +55,13 @@ impl Debug {
             self.frame_count = 0;
         }
 
-        let fps_string = format!(
-            "FPS: {}\nBackend: {:?}\nDevice: {:?}",
-            self.fps as i32, self.adapter_info.backend, self.adapter_info.name,
-        );
+        let fps_string = format!("FPS: {}\nBackend: {:?}", self.fps as i32, self.backend);
         let section = SectionBuilder::default()
             .with_screen_position((10.0, 10.0))
             .add_text(
                 Text::new(&fps_string)
                     .with_scale(26.0)
-                    .with_color([1.0, 1.0, 1.0, 1.0]),
+                    .with_color([0.0, 0.0, 0.0, 1.0]),
             );
 
         self.brush.queue(device, queue, [&section]).unwrap();
