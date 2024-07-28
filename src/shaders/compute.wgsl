@@ -5,6 +5,11 @@ struct Ray {
     direction: vec3<f32>,
 }
 
+struct Box {
+  min: vec3<f32>,
+  max: vec3<f32>,
+}
+
 fn walk_ray(ray: Ray, distance: f32) -> vec3<f32> {
     return ray.origin + distance * ray.direction;
 }
@@ -23,11 +28,23 @@ fn hit_sphere(center: vec3<f32>, radius: f32, ray: Ray) -> f32 {
     }
 }
 
+fn intersect_box(box: Box, ray: Ray) -> f32 {
+    let inv_direction = 1.0 / ray.direction;
+    let t1 = (box.min - ray.origin) * inv_direction;
+    let t2 = (box.max - ray.origin) * inv_direction;
+
+    let t_min = max(max(min(t1.x, t2.x), min(t1.y, t2.y)), min(t1.z, t2.z));
+    let t_max = min(min(max(t1.x, t2.x), max(t1.y, t2.y)), max(t1.z, t2.z));
+
+    return select(-1.0, t_min, t_max >= max(t_min, 0.0));
+}
+
 fn trace_ray(ray: Ray) -> vec3<f32> {
-    let dist = hit_sphere(vec3<f32>(0.0, 0.0, 1.0), 0.5, ray);
+    let pos = vec3<f32>(0, 0, 2);
+
+    let dist = intersect_box(Box(vec3<f32>(-0.5, -0.5, -0.5) + pos, vec3<f32>(0.5, 0.5, 0.5) + pos), ray);
     if dist > 0 {
-        let n = normalize(walk_ray(ray, dist) - vec3<f32>(0.0, 0.0, 1.0));
-        return 0.5 * (n + vec3<f32>(1.0, 1.0, 1.0));
+        return vec3<f32>(dist);
     }
 
     let unit_direction = normalize(ray.direction);
