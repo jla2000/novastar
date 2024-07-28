@@ -2,7 +2,10 @@ use std::time::{Duration, Instant};
 
 use wgpu::SurfaceConfiguration;
 use wgpu_text::{
-    glyph_brush::{ab_glyph::FontRef, SectionBuilder, Text},
+    glyph_brush::{
+        ab_glyph::FontRef, BuiltInLineBreaker, HorizontalAlign, Layout, SectionBuilder, Text,
+        VerticalAlign,
+    },
     BrushBuilder, TextBrush,
 };
 
@@ -14,6 +17,8 @@ pub struct Debug {
     backend: wgpu::Backend,
     size: (u32, u32),
 }
+
+const COMMIT_HASH: &str = include_str!(concat!(env!("OUT_DIR"), "/commit-hash.txt"));
 
 impl Debug {
     pub fn new(
@@ -62,15 +67,17 @@ impl Debug {
             "FPS: {}\nBackend: {:?}\nSurface: {}x{}",
             self.fps as i32, self.backend, self.size.0, self.size.1
         );
-        let section = SectionBuilder::default()
+        let info_section = SectionBuilder::default()
             .with_screen_position((10.0, 10.0))
-            .add_text(
-                Text::new(&fps_string)
-                    .with_scale(26.0)
-                    .with_color([0.0, 0.0, 0.0, 1.0]),
-            );
+            .add_text(Text::new(&fps_string).with_scale(26.0));
 
-        self.brush.queue(device, queue, [&section]).unwrap();
+        let commit_section = SectionBuilder::default()
+            .with_screen_position((10.0, self.size.1 as f32 - 30.0))
+            .add_text(Text::new(COMMIT_HASH).with_scale(26.0));
+
+        self.brush
+            .queue(device, queue, [&info_section, &commit_section])
+            .unwrap();
         self.brush.draw(render_pass);
     }
 }
