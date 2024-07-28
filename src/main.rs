@@ -25,7 +25,7 @@ impl ApplicationHandler for App {
         }
 
         let window_attrs = Window::default_attributes()
-            .with_inner_size(PhysicalSize::new(1900, 1200))
+            .with_inner_size(PhysicalSize::new(1900, 1205))
             .with_resizable(false)
             .with_title("novastar");
 
