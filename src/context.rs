@@ -118,11 +118,8 @@ impl Context {
             self.compute_pipeline.get_texture_view(),
         ));
 
-        self.debug.handle_resize(
-            self.config.width as f32,
-            self.config.height as f32,
-            &self.queue,
-        );
+        self.debug
+            .handle_resize(self.config.width, self.config.height, &self.queue);
     }
 
     pub fn handle_resize(&mut self, size: PhysicalSize<u32>) {
