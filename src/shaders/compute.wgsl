@@ -9,18 +9,25 @@ fn walk_ray(ray: Ray, distance: f32) -> vec3<f32> {
     return ray.origin + distance * ray.direction;
 }
 
-fn hit_sphere(center: vec3<f32>, radius: f32, ray: Ray) -> bool {
+fn hit_sphere(center: vec3<f32>, radius: f32, ray: Ray) -> f32 {
     let oc = center - ray.origin;
     let a = dot(ray.direction, ray.direction);
     let b = -2.0 * dot(ray.direction, oc);
     let c = dot(oc, oc) - radius * radius;
     let discriminant = b * b - 4 * a * c;
-    return discriminant >= 0;
+
+    if discriminant < 0 {
+        return -1.0;
+    } else {
+        return (-b - sqrt(discriminant)) / (2.0 * a);
+    }
 }
 
 fn trace_ray(ray: Ray) -> vec3<f32> {
-    if hit_sphere(vec3<f32>(0.0, 0.0, -1.0), 0.5, ray) {
-        return vec3<f32>(1.0, 0.0, 0.0);
+    let dist = hit_sphere(vec3<f32>(0.0, 0.0, 1.0), 0.5, ray);
+    if dist > 0 {
+        let n = normalize(walk_ray(ray, dist) - vec3<f32>(0.0, 0.0, 1.0));
+        return 0.5 * (n + vec3<f32>(1.0, 1.0, 1.0));
     }
 
     let unit_direction = normalize(ray.direction);
