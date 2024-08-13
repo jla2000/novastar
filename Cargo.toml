@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-env_logger = "0.11.3"
-log = "0.4.21"
-wgpu = { version = "22" }
-winit = "0.30.3"
-pollster = "0.3.0"
-wgpu_text = "0.9.0"
+env_logger = "0.11.*"
+log = "0.4.*"
+wgpu = "22.1.*"
+winit = "0.30.*"
+pollster = "0.3.*"
+wgpu_text = "0.9.*"

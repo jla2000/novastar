@@ -3,7 +3,7 @@ mod context;
 mod debug;
 mod render_pipeline;
 
-use std::sync::Arc;
+use std::{cell::OnceCell, sync::Arc};
 
 use crate::context::Context;
 use winit::{
@@ -14,23 +14,20 @@ use winit::{
     window::Window,
 };
 
+#[derive(Default)]
 struct App {
-    context: Option<Context>,
+    context: OnceCell<Context>,
 }
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
-        if self.context.is_some() {
-            return;
-        }
-
         let window_attrs = Window::default_attributes()
             .with_inner_size(PhysicalSize::new(1900, 1205))
             .with_resizable(false)
             .with_title("novastar");
 
         let window = Arc::new(event_loop.create_window(window_attrs).unwrap());
-        self.context = Some(pollster::block_on(Context::new(window)));
+        _ = self.context.set(pollster::block_on(Context::new(window)));
     }
 
     fn window_event(
@@ -39,7 +36,7 @@ impl ApplicationHandler for App {
         _window_id: winit::window::WindowId,
         event: WindowEvent,
     ) {
-        if let Some(context) = &mut self.context {
+        if let Some(context) = self.context.get_mut() {
             match event {
                 WindowEvent::Resized(new_size) => {
                     context.handle_resize(new_size);
@@ -69,5 +66,5 @@ fn main() {
 
     let event_loop = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Poll);
-    _ = event_loop.run_app(&mut App { context: None });
+    _ = event_loop.run_app(&mut App::default());
 }
