@@ -19,7 +19,7 @@ pub struct Context {
 }
 
 impl Context {
-    pub async fn new(window: Arc<Window>) -> Context {
+    pub async fn new(window: Window) -> Context {
         let window_size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
@@ -27,6 +27,9 @@ impl Context {
             ..Default::default()
         });
 
+        // Window needs to be wrapped in an Arc, in order to allow the surface to reference it
+        // throughout it's whole lifetime (Surface<'static>).
+        let window = Arc::new(window);
         let surface = instance.create_surface(window.clone()).unwrap();
 
         let adapter = instance

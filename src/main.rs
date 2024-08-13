@@ -26,7 +26,7 @@ impl ApplicationHandler for App {
             .with_resizable(false)
             .with_title("novastar");
 
-        let window = Arc::new(event_loop.create_window(window_attrs).unwrap());
+        let window = event_loop.create_window(window_attrs).unwrap();
         _ = self.context.set(pollster::block_on(Context::new(window)));
     }
 
