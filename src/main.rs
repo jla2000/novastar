@@ -3,8 +3,6 @@ mod context;
 mod debug;
 mod render_pipeline;
 
-use std::cell::OnceCell;
-
 use crate::context::Context;
 use winit::{
     application::ApplicationHandler,
@@ -16,7 +14,7 @@ use winit::{
 
 #[derive(Default)]
 struct App {
-    context: OnceCell<Context>,
+    context: Option<Context>,
 }
 
 impl ApplicationHandler for App {
@@ -27,7 +25,7 @@ impl ApplicationHandler for App {
             .with_title("novastar");
 
         let window = event_loop.create_window(window_attrs).unwrap();
-        _ = self.context.set(pollster::block_on(Context::new(window)));
+        self.context = Some(pollster::block_on(Context::new(window)));
     }
 
     fn window_event(
@@ -36,27 +34,27 @@ impl ApplicationHandler for App {
         _window_id: winit::window::WindowId,
         event: WindowEvent,
     ) {
-        if let Some(context) = self.context.get_mut() {
-            match event {
-                WindowEvent::Resized(new_size) => {
-                    context.handle_resize(new_size);
-                }
-                WindowEvent::CloseRequested => {
-                    event_loop.exit();
-                }
-                WindowEvent::RedrawRequested => {
-                    match context.render() {
-                        Ok(_) => {}
-                        Err(wgpu::SurfaceError::Lost) => {
-                            context.reconfigure_surface();
-                        }
-                        Err(wgpu::SurfaceError::OutOfMemory) => event_loop.exit(),
-                        Err(e) => eprintln!("{:?}", e),
-                    }
-                    context.window().request_redraw();
-                }
-                _ => {}
+        let context = self.context.as_mut().unwrap();
+
+        match event {
+            WindowEvent::Resized(new_size) => {
+                context.handle_resize(new_size);
             }
+            WindowEvent::CloseRequested => {
+                event_loop.exit();
+            }
+            WindowEvent::RedrawRequested => {
+                match context.render() {
+                    Ok(_) => {}
+                    Err(wgpu::SurfaceError::Lost) => {
+                        context.reconfigure_surface();
+                    }
+                    Err(wgpu::SurfaceError::OutOfMemory) => event_loop.exit(),
+                    Err(e) => eprintln!("{:?}", e),
+                }
+                context.window().request_redraw();
+            }
+            _ => {}
         }
     }
 }
