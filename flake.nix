@@ -3,23 +3,12 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-    rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
-  outputs = { self, nixpkgs, rust-overlay }:
+  outputs = { self, nixpkgs }:
     let
       system = "x86_64-linux";
-      pkgs = import nixpkgs {
-        inherit system;
-        overlays = [ rust-overlay.overlays.default ];
-      };
-      rust = pkgs.rust-bin.stable."latest".default.override {
-        extensions = [ "rust-src" "rust-analyzer" ];
-      };
-      rustPlatform = pkgs.makeRustPlatform {
-        cargo = rust;
-        rustc = rust;
-      };
+      pkgs = nixpkgs.legacyPackages.${system};
       graphicsPackages = with pkgs; [
         libGL
         vulkan-loader
@@ -34,7 +23,7 @@
       libPath = pkgs.lib.makeLibraryPath graphicsPackages;
     in
     {
-      packages.${system}.default = rustPlatform.buildRustPackage rec {
+      packages.${system}.default = pkgs.rustPlatform.buildRustPackage {
         pname = "novastar";
         version = "0.1.0";
         src = self;
@@ -46,7 +35,7 @@
         '';
       };
       devShells.${system}.default = pkgs.mkShell {
-        packages = [ rust pkgs.cmake ];
+        packages = with pkgs; [ cmake rustc cargo ];
         LD_LIBRARY_PATH = libPath;
         buildInputs = graphicsPackages;
         RUST_LOG = "info";

@@ -3,7 +3,7 @@ mod context;
 mod debug;
 mod render_pipeline;
 
-use std::{cell::OnceCell, sync::Arc};
+use std::cell::OnceCell;
 
 use crate::context::Context;
 use winit::{
